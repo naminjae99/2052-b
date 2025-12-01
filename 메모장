@@ -1,0 +1,176 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include <stdio.h>
+#include<iostream>
+#include <string>
+#include<deque>
+#include <memory.h>
+
+using namespace std;
+
+#define CMD_INIT       100
+#define CMD_INSERT     200
+#define CMD_MOVECURSOR 300
+#define CMD_COUNT      400
+
+extern void init(int H, int W, char mStr[]);
+extern void insert(char mChar);
+extern char moveCursor(int mRow, int mCol);
+extern int countCharacter(char mChar);
+
+
+int h, w;
+deque<char> dq[305];
+pair<int, int> cursor;
+pair<int, int> last;
+int alp_cnt[305][26];
+
+void init(int H, int W, char mStr[]){
+	h = H, w = W;
+	int idx=0;
+	for (int i = 0; i < 305; i++)
+		dq[i].clear();
+	memset(alp_cnt, 0, sizeof(alp_cnt));
+	cursor = { 0,0 };
+
+	for (int i = 0; i < h; i++) {
+		
+		for (int j = 0; j < w; j++) {
+			dq[i].push_back(mStr[idx]);
+			alp_cnt[i][mStr[idx] - 'a']++;
+			idx++;
+			if (idx == strlen(mStr)) {
+				if (j == w - 1)
+					last = { i + 1,0 };
+				else
+					last = { i,j + 1 };
+				break;
+			}
+		}
+		if (idx == strlen(mStr))
+			break;
+	}
+
+}
+
+void insert(char mChar){
+	dq[cursor.first].insert(dq[cursor.first].begin() + cursor.second, mChar);
+	for (int i = cursor.first; i < h; i++) {
+		if (dq[i].size() == w + 1) {
+			char b=dq[i].back();
+			dq[i].pop_back();
+			alp_cnt[i][b - 'a']--;
+
+			dq[i + 1].push_front(b);
+			alp_cnt[i + 1][b - 'a']++;
+		}
+	}
+	cursor.second++;
+	if (cursor.second == w)
+		cursor = { cursor.first + 1,0 };
+
+	last.second++;
+	if (last.second == w)
+		last = { last.first + 1,0 };
+}
+
+
+
+char moveCursor(int mRow, int mCol){
+	mRow--, mCol--;
+	if (last.first < mRow || (last.first == mRow && last.second < mCol)) {
+		cursor = last;
+		return '$';
+	}
+	else {
+		cursor = { mRow,mCol };
+		return dq[mRow][mCol];
+	}
+}
+
+int countCharacter(char mChar){
+	int ret = 0;
+	for (int j = cursor.second; j < w; j++) {
+		if (dq[cursor.first][j] == mChar)
+			ret++;
+	}
+	for (int i = cursor.first + 1; i < h; i++)
+		ret += alp_cnt[i][mChar - 'a'];
+	return ret;
+}
+
+
+static bool run()
+{
+	bool correct = false;
+	int queryCnt;
+	scanf("%d", &queryCnt);
+	int H, W;
+	char mChar;
+	static char mStr[90001];
+
+	while (queryCnt--)
+	{
+		int cmd;
+		scanf("%d", &cmd);
+
+		if (cmd == CMD_INIT)
+		{
+			scanf("%d %d %s", &H, &W, mStr);
+			init(H, W, mStr);
+			correct = true;
+		}
+		else if (cmd == CMD_INSERT)
+		{
+			scanf(" %c", &mChar);
+			insert(mChar);
+		}
+		else if (cmd == CMD_MOVECURSOR)
+		{
+			int mRow, mCol;
+			scanf("%d %d", &mRow, &mCol);
+
+			char ret = moveCursor(mRow, mCol);
+
+			char ans;
+			scanf(" %c", &ans);
+			if (ret != ans)
+			{
+				correct = false;
+			}
+		}
+		else if (cmd == CMD_COUNT)
+		{
+			scanf(" %c", &mChar);
+
+			int ret = countCharacter(mChar);
+
+			int ans;
+			scanf("%d", &ans);
+			if (ret != ans)
+			{
+				correct = false;
+			}
+		}
+
+	}
+	return correct;
+}
+
+int main()
+{
+
+	setbuf(stdout, NULL);
+	freopen("sample_input.txt", "r", stdin);
+	int T, MARK;
+	scanf("%d %d", &T, &MARK);
+
+	for (int tc = 1; tc <= T; tc++)
+	{
+		int score = run() ? MARK : 0;
+		printf("#%d %d\n", tc, score);
+
+	}
+	return 0;
+}
