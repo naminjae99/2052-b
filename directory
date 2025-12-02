@@ -1,0 +1,204 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+
+int dx[4] = { -1,0,1,0 };
+int dy[4] = { 0,1,0,-1 };
+int n, m, ret, t, k, Q, L;
+
+
+#define NAME_MAXLEN 6
+#define PATH_MAXLEN 1999
+
+struct Node {
+	int h;
+	int cnt=0;
+	int id;
+	Node* par;
+	vector<Node*> child;
+}node[50005];
+queue<int> q;
+
+unordered_map<string, int>mp;
+string rmp[50005];
+int idx;
+
+void init(int n) {
+	node[0].cnt = 0;
+	node[0].child.clear();
+	q = {};
+	for (int i = 1; i <= 50000; i++)
+		q.push(i);
+
+	mp.clear();
+	idx = 1;
+}
+
+Node* find_par(string path) {
+	stringstream ss(path);
+	string word;
+	vector<string> words;
+
+	while (getline(ss, word, '/'))
+		if (!word.empty())
+			words.push_back(word);
+
+	Node* cur = &node[0];
+	for (auto c : words) {
+		for (auto cc : cur->child) {
+			if (cc->h == mp[c]) {
+				cur = cc;
+				break;
+			}
+		}
+	}
+	return cur;
+}
+
+void cmd_mkdir(char path[PATH_MAXLEN + 1], char name[NAME_MAXLEN + 1]) {
+	Node* par=find_par(path);
+
+	Node* add = &node[q.front()];
+	add->id = q.front();
+	q.pop();
+
+	if (mp.find(name) == mp.end()) {
+		rmp[idx] = name;
+		mp[name] = idx++;
+	}
+
+	add->h = mp[name];
+	add->par = par;
+	add->cnt = 0;
+	add->child.clear();
+
+	par->child.push_back(add);
+	
+	while (par!= nullptr) {
+		par->cnt++;
+		par = par->par;
+	}
+
+
+
+}
+
+void del(Node* cur) {
+	for (auto c : cur->child) {
+		del(c);
+	}
+	q.push(cur->id);
+}
+void cmd_rm(char path[PATH_MAXLEN + 1]) {
+	Node* cur = find_par(path);
+
+	int cnt = cur->cnt;
+	cnt++;
+
+	Node* par = cur->par;
+
+	//부모의 자식에서 제외
+	for (int i = 0; i < par->child.size(); i++) {
+		if (par->child[i] == cur) {
+			par->child.erase(par->child.begin()+i);
+			break;
+		}
+	}
+
+	//상위 부모에서 cnt개 뺴기
+	while (par) {
+		par->cnt -= cnt;
+		par = par->par;
+	}
+	del(cur);
+
+
+}
+void cpy(Node* x,Node* par) {
+	Node* add = &node[q.front()];
+	add->id = q.front();
+	q.pop();
+	add->h = x->h;
+	add->cnt = x->cnt;
+	add->par = par;
+
+	par->child.push_back(add);
+
+	for (auto c : x->child) {
+		cpy(c, add);
+	}
+}
+void cmd_cp(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
+	Node* des = find_par(dstPath);
+
+	Node* st = find_par(srcPath);
+	
+	cpy(st,des);
+
+	int cnt = st->cnt + 1;
+	while (des) {
+		des->cnt += cnt;
+		des = des->par;
+	}
+}
+
+void cmd_mv(char srcPath[PATH_MAXLEN + 1], char dstPath[PATH_MAXLEN + 1]) {
+	Node* des = find_par(dstPath);
+
+	Node* st = find_par(srcPath);
+	Node* par = st->par;
+
+	int cnt = st->cnt + 1;
+	//부모의 자식에서 제외
+	for (int i = 0; i < par->child.size(); i++) {
+		if (par->child[i] == st) {
+			par->child.erase(par->child.begin() + i);
+			break;
+		}
+	}
+	//상위 부모에서 cnt개 뺴기
+	while (par) {
+		par->cnt -= cnt;
+		par = par->par;
+	}
+
+
+	des->child.push_back(st);
+	st->par = des;
+	par = des;
+	while (par) {
+		par->cnt += cnt;
+		par = par->par;
+	}
+
+}
+
+int cmd_find(char path[PATH_MAXLEN + 1]) {
+	Node* cur = find_par(path);
+	return cur->cnt;
+}
