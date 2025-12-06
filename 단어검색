@@ -1,0 +1,162 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+#include <stdio.h>
+#include <iostream>
+#include <string>
+#include <memory.h>
+#include <vector>
+#include<queue>
+#include<algorithm>
+
+extern void init();
+extern int add(char str[]);
+extern int remove(char str[]);
+extern int search(char str[]);
+
+using namespace std;
+
+
+#define MAX_LEN 30
+#define CMD_INIT 1
+#define CMD_ADD 2
+#define CMD_REMOVE 3
+#define CMD_SEARCH 4
+
+int trie[600005][26];
+int idx = 2;
+int cnt[600005];
+
+void init() {
+	memset(trie, 0, sizeof(trie));
+	memset(cnt, 0, sizeof(cnt));
+}
+
+int insert(string s) {
+	int cur = 1;
+	for (int i = 0; i < s.size(); i++) {
+		int ch = s[i] - 'a';
+		if (trie[cur][ch] == 0)
+			trie[cur][ch] = idx++;
+		cur = trie[cur][ch];
+	}
+	return ++cnt[cur];
+}
+int del(int cur,int ii, string s) {
+	if (ii == s.size()) {
+		int r = cnt[cur];
+		cnt[cur] = 0;
+		return r;
+	}
+
+	int re = 0;
+
+	if (s[ii] == '?') {
+		for (int i = 0; i < 26; i++) {
+			if (trie[cur][i]!=0){
+				re+=del(trie[cur][i], ii + 1, s);
+			}
+		}
+	}
+	else {
+		if (trie[cur][s[ii] - 'a'] != 0)
+			re += del(trie[cur][s[ii] - 'a'], ii + 1, s);
+	}
+	return re;
+}
+
+int find(int cur, int ii, string s) {
+	if (ii == s.size()) {
+		return cnt[cur];
+	}
+
+	int re = 0;
+
+	if (s[ii] == '?') {
+		for (int i = 0; i < 26; i++) {
+			if (trie[cur][i] != 0) {
+				re += find(trie[cur][i], ii + 1, s);
+			}
+		}
+	}
+	else {
+		if (trie[cur][s[ii] - 'a'] != 0)
+			re += find(trie[cur][s[ii] - 'a'], ii + 1, s);
+	}
+	return re;
+}
+
+int add(char str[]){
+
+	return insert(str);
+}
+
+int remove(char str[]) {
+	return del(1, 0, str);
+}
+
+int search(char str[]) {
+	return find(1, 0, str);
+}
+
+static bool run() {
+	int q;
+	scanf("%d", &q);
+
+	char str[MAX_LEN + 1];
+	int cmd, ans, ret = 0;
+	bool okay = false;
+
+	for (int i = 0; i < q; ++i) {
+		scanf("%d", &cmd);
+		switch (cmd) {
+		case CMD_INIT:
+			init();
+			okay = true;
+			break;
+		case CMD_ADD:
+			scanf("%s %d", str, &ans);
+			ret = add(str);
+			if (ans != ret)
+				okay = false;
+
+			// cout <<"성공여부 : "<< okay << "\n\n";
+			break;
+		case CMD_REMOVE:
+			scanf("%s %d", str, &ans);
+			ret = remove(str);
+			if (ans != ret)
+				okay = false;
+
+			// cout << "성공여부 : " << okay << "\n\n";
+			break;
+		case CMD_SEARCH:
+			scanf("%s %d", str, &ans);
+			ret = search(str);
+			if (ans != ret)
+				okay = false;
+
+			//cout << "성공여부 : " << okay << "\n\n";
+			break;
+		default:
+			okay = false;
+			break;
+		}
+	}
+	return okay;
+}
+
+int main() {
+	setbuf(stdout, NULL);
+	//freopen("sample_input.txt", "r", stdin);
+
+	int T, MARK;
+	scanf("%d %d", &T, &MARK);
+
+	for (int tc = 1; tc <= T; tc++) {
+		int score = run() ? MARK : 0;
+		printf("#%d %d\n", tc, score);
+	}
+
+	return 0;
+}
