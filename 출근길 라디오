@@ -1,0 +1,98 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+
+int dx[8] = { -1,0,1,-1,1,-1,0,1 };
+int dy[8] = { 1,1,1,0,0,-1,-1,-1 };
+int n, m, ret, k, Q, L;
+
+
+
+vector<int> road[1005];
+int penwick[100005];
+
+void upd(int i, int x) {
+	while (i <= n) {
+		penwick[i] += x;
+		i += i & -i;
+	}
+}
+int sum(int i) {
+	int re = 0;
+	while (i > 0) {
+		re += penwick[i];
+		i -= i & -i;
+	}
+	return re;
+}
+void init(int N, int M, int mType[], int mTime[]){
+	n = N; m = M;
+	
+	for (int i = 0; i < m; i++)
+		road[i].clear();
+	memset(penwick, 0, sizeof(penwick));
+
+	for (int i = 1; i < n; i++) {
+		road[mType[i - 1]].push_back(i);
+		upd(i, mTime[i - 1]);
+	}
+}
+
+void destroy()
+{
+
+}
+
+void update(int mID, int mNewTime) {
+	mID++;  // 1-indexed
+	int cur = sum(mID) - sum(mID - 1);  // 현재 값
+	upd(mID, mNewTime - cur);          // 차이만 반영
+}
+int updateByType(int mTypeID, int mRatio256) {
+	int ret = 0;
+	for (auto c : road[mTypeID]) {
+		int ori = sum(c) - sum(c - 1);
+		int nxt = ori * mRatio256 / 256;
+		upd(c, nxt - ori);   // 
+		ret += nxt;
+	}
+	return ret;
+}
+int calculate(int mA, int mB){
+	if (mA > mB)
+		swap(mA, mB);
+
+	return sum(mB) - sum(mA);
+}
+
+
+
+
+
+
+
