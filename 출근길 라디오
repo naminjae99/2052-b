@@ -35,6 +35,7 @@ int n, m, ret, k, Q, L;
 
 vector<int> road[1005];
 int penwick[100005];
+int arr[100005];
 
 void upd(int i, int x) {
 	while (i <= n) {
@@ -60,6 +61,7 @@ void init(int N, int M, int mType[], int mTime[]){
 	for (int i = 1; i < n; i++) {
 		road[mType[i - 1]].push_back(i);
 		upd(i, mTime[i - 1]);
+		arr[i] = mTime[i - 1];
 	}
 }
 
@@ -70,16 +72,18 @@ void destroy()
 
 void update(int mID, int mNewTime) {
 	mID++;  // 1-indexed
-	int cur = sum(mID) - sum(mID - 1);  // 현재 값
-	upd(mID, mNewTime - cur);          // 차이만 반영
+
+	upd(mID, mNewTime - arr[mID]);          // 차이만 반영
+	arr[mID] = mNewTime;
 }
 int updateByType(int mTypeID, int mRatio256) {
 	int ret = 0;
 	for (auto c : road[mTypeID]) {
-		int ori = sum(c) - sum(c - 1);
+		int ori = arr[c];
 		int nxt = ori * mRatio256 / 256;
 		upd(c, nxt - ori);   // 
 		ret += nxt;
+		arr[c] = nxt;
 	}
 	return ret;
 }
@@ -92,6 +96,22 @@ int calculate(int mA, int mB){
 
 
 
+void input() {
+	
+
+}
+
+void solve() {
+
+
+
+}
+
+int main() {
+	fastio;
+	input();
+	solve();
+}
 
 
 
