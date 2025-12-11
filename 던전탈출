@@ -1,0 +1,138 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include <iostream>
+#include <unordered_map>
+#include <set>
+#include <vector>
+#include <memory.h>
+#include <algorithm>
+#include <math.h>
+#include <queue>
+#include <unordered_set>
+#include <string>
+#include <string.h>
+
+using namespace std;
+using ll = long long;
+
+int Q, n, m, p;
+
+int dx[4] = { -1,1,0,0 };
+int dy[4] = { 0, 0, -1, 1 };
+
+
+#define MAX_MAP_SIZE 350
+
+extern void init(int N, int mMaxStamina, int mMap[MAX_MAP_SIZE][MAX_MAP_SIZE]);
+extern void addGate(int mGateID, int mRow, int mCol);
+extern void removeGate(int mGateID);
+extern int getMinTime(int mStartGateID, int mEndGateID);
+
+#define MAP_SIZE_MAX	350
+#define CMD_INIT			0
+#define CMD_ADD_GATE		1
+#define CMD_REMOVE_GATE		2
+#define CMD_GET_MIN_TIME	3
+
+static int gMap[MAX_MAP_SIZE][MAX_MAP_SIZE];
+
+int arr[MAX_MAP_SIZE][MAX_MAP_SIZE];
+int hp;
+pair<int, int> gate[205];
+bool del[205];
+
+vector<pair<int,int>> ed[205];
+
+int d[205];
+int gcnt;
+
+int vis[305][305];
+
+void init(int N, int mMaxStamina, int mMap[MAP_SIZE_MAX][MAP_SIZE_MAX]) {
+	memset(del, 0, sizeof(del));
+	for (int i = 1; i <= 200; i++)
+		ed[i].clear();
+
+	n = N; hp = mMaxStamina;
+	for (int i = 0; i < n; i++)
+		for (int j = 0; j < n; j++)
+			arr[i][j] = -mMap[i][j];
+
+}
+
+void addGate(int mGateID, int mRow, int mCol) {
+	gcnt = mGateID;
+
+	gate[mGateID] = { mRow,mCol };
+
+	queue<pair<int, int>>q;
+	memset(vis, -1, sizeof(vis));
+	vis[mRow][mCol] = 0;
+	q.push({ mRow,mCol });
+
+	while (!q.empty()) {
+		int x = q.front().first;
+		int y = q.front().second;
+		q.pop();
+
+		if (vis[x][y] == hp)
+			break;
+		for (int i = 0; i < 4; i++) {
+			int nx = x + dx[i];
+			int ny = y + dy[i];
+			if (nx < 0 || nx >= n || ny < 0 || ny >= n)
+				continue;
+			if (arr[nx][ny]==-1||vis[nx][ny]!=-1)
+				continue;
+			if (arr[nx][ny] > 0) {
+				int num = arr[nx][ny];
+				if (del[num] == 0) {
+					ed[mGateID].push_back({ num,vis[x][y] + 1 });
+					ed[num].push_back({ mGateID,vis[x][y] + 1 });
+				}
+			}
+			q.push({ nx,ny });
+			vis[nx][ny] = vis[x][y] + 1;
+		} 
+	}
+
+	return;
+}
+
+void removeGate(int mGateID) {
+	del[mGateID] = 1;
+}
+
+
+
+
+int getMinTime(int mStartGateID, int mEndGateID) {
+	priority_queue<pair<int, int>>q;
+	fill(d, d + gcnt + 1, 1e9);
+	q.push({ 0,mStartGateID });
+	d[mStartGateID] = 0;
+
+	while (!q.empty()) {
+		int now = q.top().second;
+		int cost = -q.top().first;
+		q.pop();
+
+		if (d[now] != cost)
+			continue;
+		if (now == mEndGateID) {
+			return cost;
+		}
+		for (auto c : ed[now]) {
+			if (del[c.first])
+				continue;
+			if (d[c.first] > cost + c.second) {
+				d[c.first] = cost + c.second;
+				q.push({ -d[c.first],c.first });
+			}
+		}
+	}
+	return -1;
+}
