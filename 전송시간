@@ -1,0 +1,236 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+
+
+int n;
+int sm_ed[305][30][30];
+int sm_dis[305][4][4];
+
+vector<pair<int, int>> ed[905];
+int d[35];
+
+//그룹내에서 다익스트라를 진행해 소그룹 대표들 사이의 거리 업데이트
+void gr_dik(int g) {
+	fill(d, d + 31, 1e9);
+	priority_queue<pair<int, int>>q;
+	d[1] = 0;
+	q.push({ 0,1 });
+
+	bool f1 = 0; bool f2 = 0;
+
+	while (!q.empty()) {
+		int cost = -q.top().first;
+		int now = q.top().second;
+		q.pop();
+		if (d[now] != cost)
+			continue;
+		if (now == 2)
+			f1 = 1;
+		if (now == 3)
+			f2 = 1;
+		if (f1&&f2)
+			break;
+
+		for (int i = 1; i <= 30; i++) {
+			if (sm_ed[g][now][i] == 1e9)
+				continue;
+			if (d[i] > cost + sm_ed[g][now][i]) {
+				d[i] = cost + sm_ed[g][now][i];
+				q.push({ -d[i],i });
+			}
+		}
+	}
+	sm_dis[g][1][2] = sm_dis[g][2][1] = d[2];
+	sm_dis[g][1][3] = sm_dis[g][3][1]= d[3];
+
+	fill(d, d + 31, 1e9);
+	q = {};
+	d[2] = 0;
+	q.push({ 0,2 });
+
+
+
+	while (!q.empty()) {
+		int cost = -q.top().first;
+		int now = q.top().second;
+		q.pop();
+		if (d[now] != cost)
+			continue;
+		if (now == 3)
+			break;
+
+		for (int i = 1; i <= 30; i++) {
+			if (sm_ed[g][now][i] == 1e9)
+				continue;
+			if (d[i] > cost + sm_ed[g][now][i]) {
+				d[i] = cost + sm_ed[g][now][i];
+				q.push({ -d[i],i });
+			}
+		}
+	}
+	sm_dis[g][2][3] = sm_dis[g][3][2]= d[3];
+}
+
+void init(int N, int K, int mNodeA[], int mNodeB[], int mTime[]) {
+	n = N;
+
+	for (int i = 0; i <= n; i++)
+		for (int j = 0; j <= 30; j++)
+			for (int w = 0; w <= 30; w++)
+				sm_ed[i][j][w] = 1e9;
+	for (int i = 0; i <3*n+5; i++)
+		ed[i].clear();
+
+
+	for (int i = 0; i < K;i++) {
+		int agr = mNodeA[i]/100;
+		int bgr = mNodeB[i]/100;
+
+		int an = mNodeA[i] % 100;
+		int bn = mNodeB[i] % 100;
+
+
+		if (agr == bgr) {
+			sm_ed[agr][an][bn] = sm_ed[agr][bn][an] = mTime[i];
+		}
+		//그룹이 다르다면 대표
+		else {
+			int a = agr * 3 + an;
+			int b = bgr * 3 + bn;
+			ed[a].push_back({ b,mTime[i] });
+			ed[b].push_back({ a,mTime[i] });
+		}
+	}
+	for (int i = 1; i <= n; i++)
+		gr_dik(i);
+
+}
+
+void addLine(int mNodeA, int mNodeB, int mTime) {
+	int agr = mNodeA / 100;
+	int bgr = mNodeB / 100;
+
+	int an = mNodeA % 100;
+	int bn = mNodeB % 100;
+
+
+	if (agr == bgr) {
+		sm_ed[agr][an][bn] = sm_ed[agr][bn][an] = mTime;
+		gr_dik(agr);
+	}
+	//그룹이 다르다면 대표
+	else {
+		int a = agr * 3 + an;
+		int b = bgr * 3 + bn;
+		ed[a].push_back({ b,mTime });
+		ed[b].push_back({ a,mTime });
+	}
+}
+
+void removeLine(int mNodeA, int mNodeB) {
+	int agr = mNodeA / 100;
+	int bgr = mNodeB / 100;
+
+	int an = mNodeA % 100;
+	int bn = mNodeB % 100;
+
+
+	if (agr == bgr) {
+		sm_ed[agr][an][bn] = sm_ed[agr][bn][an] = 1e9;
+		gr_dik(agr);
+	}
+	//그룹이 다르다면 대표
+	else {
+		int a = agr * 3 + an;
+		int b = bgr * 3 + bn;
+
+		bool flag = 0;
+		for (int i = 0; i < ed[a].size(); i++) {
+			if (ed[a][i].first == b) {
+				ed[a].erase(ed[a].begin() + i);
+				flag = 1;
+				break;
+			}
+
+		}
+
+		if (flag) {
+			for (int i = 0; i < ed[b].size(); i++) {
+				if (ed[b][i].first == a) {
+					ed[b].erase(ed[b].begin() + i);
+					break;
+				}
+			}
+		}
+	
+	}
+	
+}
+
+int dd[905];
+int checkTime(int mNodeA, int mNodeB) {
+	fill(dd, dd + 3 * n + 5, 1e9);
+	priority_queue<pair<int, int>>q;
+	dd[mNodeA] = 0;
+	q.push({ 0,mNodeA });
+
+	while (!q.empty()) {
+		int cost = -q.top().first;
+		int now = q.top().second;
+		q.pop();
+		if (dd[now] != cost)
+			continue;
+		if (now == mNodeB)
+			return cost;
+		for (auto c : ed[now]) {
+			if (dd[c.first] > cost + c.second) {
+				dd[c.first] > cost + c.second;
+				q.push({ -dd[c.first],c.first });
+			}
+		}
+		int gr = (now - 1) / 3;
+		if (gr == 0)
+			continue;
+		int num = now % 3;
+		if (num == 0)
+			num = 3;
+
+		for (int i = 1; i <= 3; i++) {
+			int nxt = gr * 3 + i;
+			int ncost = sm_dis[gr][num][i]+cost;
+			if (dd[nxt] > ncost) {
+				dd[nxt] = ncost;
+				q.push({ -ncost,nxt });
+			}
+		}
+
+		
+	}
+
+}
