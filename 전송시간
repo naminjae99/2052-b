@@ -210,7 +210,7 @@ int checkTime(int mNodeA, int mNodeB) {
 			return cost;
 		for (auto c : ed[now]) {
 			if (dd[c.first] > cost + c.second) {
-				dd[c.first] > cost + c.second;
+				dd[c.first] = cost + c.second;
 				q.push({ -dd[c.first],c.first });
 			}
 		}
