@@ -46,14 +46,16 @@ struct info{
 	int tm;
 	bool del;
 	bool operator<(const info& o)const {
-		return tm > o.tm;
+		if(tm!=o.tm)
+			return tm > o.tm;
+		return ori_nid > o.ori_nid;
 	}
 }News[30005];
 priority_queue<info> Newsq;
 
 vector<int, int>fol[505];
 
-priority_queue<pair<int, int>> have[505];
+vector<int> have[505];
 
 void init(int N, int K) {
 	n = N;  k = K;
@@ -64,7 +66,7 @@ void init(int N, int K) {
 	for (int i = 0; i <= k; i++)
 		fol[i].clear();
 	for (int i = 0; i <= n; i++)
-		have[i] = {};
+		have[i].clear()
 }
 
 void sendNews(int time) {
@@ -80,7 +82,7 @@ void sendNews(int time) {
 
 		int cid = cur.cid;
 		for (auto c : fol[cid]) 
-			have[c].push({ cur.tm,cur.ori_nid});
+			have[c].push_back(cur.ori_nid);
 	}
 }
 
@@ -126,18 +128,16 @@ int checkUser(int mTime, int mUID, int mRetIDs[]) {
 	int id = ump[mUID];
 	int i = 0;
 	
-	while (!have[id].empty()) {
-		int ori_nid = have[id].top().second;
-		have[id].pop();
+	for (int i = have[id].size() - 1; i >= 0; i--) {
+		int ori_nid = have[id][i];
 		int nid = nmp[ori_nid];
-
 		if (News[nid].del)
 			continue;
 		mRetIDs[i++] = ori_nid;
 		if (i == 3)
 			break;
 	}
-	have[id] = {};
+	have[id].clear();
 	return i;
 }
 
