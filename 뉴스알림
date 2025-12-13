@@ -1,0 +1,147 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+
+
+#define MAX_USER 500
+#define MAX_CHANNEL 500
+#define MAX_NEWS 30000
+
+int n, k;
+unordered_map<int, int> ump;
+int uidx;
+unordered_map<int, int>cmp;
+int cidx;
+unordered_map<int, int>nmp;
+int nidx;
+
+struct info{
+	int ori_nid;
+	int cid;
+	int tm;
+	bool del;
+	bool operator<(const info& o)const {
+		return tm > o.tm;
+	}
+}News[30005];
+priority_queue<info> Newsq;
+
+vector<int, int>fol[505];
+
+priority_queue<pair<int, int>> have[505];
+
+void init(int N, int K) {
+	n = N;  k = K;
+
+	uidx = cidx = nidx = 0;
+	ump.clear(), cmp.clear(), nmp.clear();
+	Newsq = {};
+	for (int i = 0; i <= k; i++)
+		fol[i].clear();
+	for (int i = 0; i <= n; i++)
+		have[i] = {};
+}
+
+void sendNews(int time) {
+	while (!Newsq.empty()) {
+		info cur = Newsq.top();
+		if (cur.tm > time)
+			return;
+		Newsq.pop();
+
+		int nid = nmp[cur.ori_nid];
+		if (News[nid].del)
+			continue;
+
+		int cid = cur.cid;
+		for (auto c : fol[cid]) 
+			have[c].push({ cur.tm,cur.ori_nid});
+	}
+}
+
+void registerUser(int mTime, int mUID, int mNum, int mChannelIDs[]) {
+	sendNews(mTime);
+
+	if (ump.find(mUID) == ump.end())
+		ump[mUID] = uidx++;
+	int id = ump[mUID];
+
+	for (int i = 0; i < mNum; i++) {
+		if (cmp.find(mChannelIDs[i]) == cmp.end())
+			cmp[mChannelIDs[i]] = cidx++;
+		int cidx = cmp[mChannelIDs[i]];
+		
+		fol[cidx].push_back(id);
+	}
+}
+
+int offerNews(int mTime, int mNewsID, int mDelay, int mChannelID) {
+	sendNews(mTime);
+
+	nmp[mNewsID] = nidx;
+	int nid = nidx++;
+	int cid = cmp[mChannelID];
+	News[nid] = { mNewsID,cid,mTime + mDelay,0 };
+
+	Newsq.push(News[nid]);
+	
+	return fol[cid].size();
+}
+
+void cancelNews(int mTime, int mNewsID) {
+	sendNews(mTime);
+
+	int nid = nmp[mNewsID];
+	News[nid].del = 1;
+
+}
+
+int checkUser(int mTime, int mUID, int mRetIDs[]) {
+	sendNews(mTime);
+	int id = ump[mUID];
+	int i = 0;
+	
+	while (!have[id].empty()) {
+		int ori_nid = have[id].top().second;
+		have[id].pop();
+		int nid = nmp[ori_nid];
+
+		if (News[nid].del)
+			continue;
+		mRetIDs[i++] = ori_nid;
+		if (i == 3)
+			break;
+	}
+	have[id] = {};
+	return i;
+}
+
+int main() {
+	fastio
+
+}
