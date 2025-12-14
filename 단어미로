@@ -1,0 +1,178 @@
+#include < unordered_map >
+#include < string >
+#include < set >
+#include < cstring >
+
+using namespace std;
+
+struct Room {
+	string s;
+	int fr, mid, ba;
+}room[30005];
+unordered_map<string, int>mp;
+
+struct f {
+	string s;
+	int id;
+	bool operator<(const f& o)const {
+		return s < o.s;
+	}
+};
+unordered_map<string, set<f>>fr2;
+unordered_map<string, set<f>>fr4;
+unordered_map<string, set<f>>mid;
+unordered_map<string, set<f>>ba2;
+unordered_map<string, set<f>>ba4;
+int cur;
+
+void init() {
+	fr2.clear();
+	fr4.clear();
+	mid.clear();
+	ba2.clear();
+	ba4.clear();
+
+	mp.clear();
+}
+
+void addRoom(int mID, char mWord[], int mDirLen[]) {
+	string s = mWord;
+	room[mID] = { s,mDirLen[0],mDirLen[1],mDirLen[2] };
+	mp[s] = mID;
+
+	string tmp = "";
+	for (int i = 0; i < 2; i++)
+		tmp += mWord[i];
+	fr2[tmp].insert({ s,mID });
+	for (int i = 2; i < 4; i++)
+		tmp += mWord[i];
+	fr4[tmp].insert({ s,mID });
+
+	tmp = "";
+	for (int i = 4; i < 7; i++)
+		tmp += mWord[i];
+	mid[tmp].insert({ s,mID });
+
+	tmp = "";
+	for (int i = 10; i >=9; i--)
+		tmp = mWord[i]+tmp;
+	ba2[tmp].insert({ s,mID });
+
+	for (int i = 8; i >=7; i--)
+		tmp = mWord[i]+tmp;
+	ba4[tmp].insert({ s,mID });
+}
+
+void setCurrent(char mWord[]) { 
+	cur = mp[mWord];
+}
+
+int moveDir(int mDir) {
+
+	if (mDir == 0) {
+		int cnt=room[cur].fr;
+		string s = room[cur].s;
+
+		string tmp = "";
+		if (cnt == 2) {
+			for (int i = 0; i < 2; i++)
+				tmp += s[i];
+			
+			if (ba2[tmp].empty()||(ba2[tmp].size()==1&&ba2[tmp].begin()->id==cur))
+				return 0;
+
+			auto it=ba2[tmp].begin();
+			if (it->id == cur)
+				it++;
+			cur = it->id;
+			return cur;
+		}
+		else {
+			for (int i = 0; i < 4; i++)
+				tmp += s[i];
+			if (ba4[tmp].empty() || (ba4[tmp].size() == 1 && ba4[tmp].begin()->id == cur))
+				return 0;
+
+			auto it = ba4[tmp].begin();
+			if (it->id == cur)
+				it++;
+			cur = it->id;
+			return cur;
+		}
+
+	}
+	else if (mDir == 1) {
+		string s = room[cur].s;
+		string tmp = "";
+		for (int i = 4; i < 7; i++)
+			tmp += s[i];
+
+		if (mid[tmp].empty() || (mid[tmp].size() == 1 && mid[tmp].begin()->id == cur))
+			return 0;
+
+		auto it = mid[tmp].begin();
+		if (it->id == cur)
+			it++;
+		cur = it->id;
+		return cur;
+		
+	}
+	else {
+		int cnt = room[cur].ba;
+		string s = room[cur].s;
+
+		string tmp = "";
+		if (cnt == 2) {
+			for (int i = 9; i < 11; i++)
+				tmp += s[i];
+
+			if (fr2[tmp].empty() || (fr2[tmp].size() == 1 && fr2[tmp].begin()->id == cur))
+				return 0;
+
+			auto it = fr2[tmp].begin();
+			if (it->id == cur)
+				it++;
+			cur = it->id;
+			return cur;
+		}
+		else {
+			for (int i = 7; i < 11; i++)
+				tmp += s[i];
+
+			if (fr4[tmp].empty() || (fr4[tmp].size() == 1 && fr4[tmp].begin()->id == cur))
+				return 0;
+
+			auto it = fr4[tmp].begin();
+			if (it->id == cur)
+				it++;
+			cur = it->id;
+			return cur;
+		}
+	}
+}
+
+void changeWord(char mWord[], char mChgWord[], int mChgLen[]) {
+	int id = mp[mWord];
+	string ori = room[id].s;
+
+	fr2[ori.substr(0, 2)].erase({ ori,id });
+	fr4[ori.substr(0, 4)].erase({ ori,id });
+	mid[ori.substr(4, 3)].erase({ ori,id });
+	ba2[ori.substr(9, 2)].erase({ ori,id });
+	ba4[ori.substr(7, 4)].erase({ ori,id });
+
+	room[id].fr = mChgLen[0];
+	room[id].mid = mChgLen[1];
+	room[id].ba = mChgLen[2];
+	room[id].s = mChgWord;
+
+	ori = mChgWord;
+
+	fr2[ori.substr(0, 2)].insert({ ori,id });
+	fr4[ori.substr(0, 4)].insert({ ori,id });
+	mid[ori.substr(4, 3)].insert({ ori,id });
+	ba2[ori.substr(9, 2)].insert({ ori,id });
+	ba4[ori.substr(7, 4)].insert({ ori,id });
+
+	
+}
