@@ -1,0 +1,292 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int n, m, k, Q;
+int dx[4] = { -1,1,0,0 };
+int dy[4] = { 0,0,-1,1 };
+
+
+const int MAX_N = 20;
+const int MAX_HASH = 9999;
+
+int arr[MAX_N][MAX_N];
+
+vector<int> garo[MAX_HASH+5];
+vector<int> sero[MAX_HASH+5];
+
+void init(int N, int mMap[20][20]){
+	for (int i = 0; i <= MAX_HASH; i++) {
+		garo[i].clear(), sero[i].clear();
+	}
+
+	n = N;
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			arr[i][j] = mMap[i][j];
+		}
+	}
+
+
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			int h = 0;
+			int xy = i * n + j;
+
+			if (j + 1 < n) {
+				h += (5 + arr[i][j] - arr[i][j + 1]);
+				garo[h].push_back(xy);
+			}
+			if (j + 2 < n) {
+				h *= 10;
+				h+= (5 + arr[i][j] - arr[i][j + 2]);
+				garo[h].push_back(xy);
+			}
+			if (j + 3 < n) {
+				h *= 10;
+				h += (5 + arr[i][j] - arr[i][j + 3]);
+				garo[h].push_back(xy);
+			}
+			if (j + 4 < n) {
+				h *= 10;
+				h += (5 + arr[i][j] - arr[i][j + 4]);
+				garo[h].push_back(xy);
+			}
+
+		}
+	}
+	
+	for (int i = 0; i < n; i++) {
+		for (int j = 0; j < n; j++) {
+			int h = 0;
+			int xy = i * n + j;
+
+			if (i + 1 < n) {
+				h += (5 + arr[i][j] - arr[i+1][j]);
+				sero[h].push_back(xy);
+			}
+			if (i+ 2 < n) {
+				h *= 10;
+				h += (5 + arr[i][j] - arr[i+2][j]);
+				sero[h].push_back(xy);
+			}
+			if (i + 3 < n) {
+				h *= 10;
+				h += (5 + arr[i][j] - arr[i + 3][j]);
+				sero[h].push_back(xy);
+			}
+			if (i + 4 < n) {
+				h *= 10;
+				h += (5 + arr[i][j] - arr[i + 4][j]);
+				sero[h].push_back(xy);
+			}
+
+		}
+	}
+}
+
+
+
+int numberOfCandidate(int M, int mStructure[5]){
+	if (M == 1)
+		return n * n;
+
+	int gh = 0;
+	int rgh = 0;
+	for (int i = 1; i < M; i++) {
+		gh *= 10;
+		gh += (mStructure[i] - mStructure[0] + 5);
+	}
+	for (int i = M - 2; i >= 0; i--) {
+		rgh *= 10;
+		rgh += (mStructure[i] - mStructure[M - 1] + 5);
+	}
+
+	int sh = 0;
+	int rsh = 0;
+	for (int i = 1; i < M; i++) {
+		sh *= 10;
+		sh += (mStructure[i] - mStructure[0] + 5);
+	}
+	for (int i = M - 2; i >= 0; i--) {
+		rsh *= 10;
+		rsh += (mStructure[i] - mStructure[M - 1] + 5);
+	}
+
+
+	int sum = 0;
+	sum+=garo[gh].size();
+	if (gh != rgh)
+		sum += garo[rgh].size();
+	sum += sero[sh].size();
+	if (sh != rsh)
+		sum += sero[rsh].size();
+	return sum;
+}
+
+int ret;
+int vis[MAX_N][MAX_N];
+
+int bfs(int lim) {
+	memset(vis, 0, sizeof(vis));
+	queue<pair<int, int>> q;
+
+	int cnt = n * n;
+
+	for (int i = 0; i < n; i++) {
+		if (arr[i][0] < lim) {
+			vis[i][0] = 1;
+			q.push({ i,0 });
+			cnt--;
+		}
+		if (arr[i][n-1] < lim) {
+			vis[i][n-1] = 1;
+			q.push({ i,n-1 });
+			cnt--;
+		}
+	}
+	for (int i = 1; i < n-1; i++) {
+		if (arr[0][i] < lim) {
+			vis[0][i] = 1;
+			q.push({ 0,i });
+			cnt--;
+		}
+		if (arr[n-1][i] < lim) {
+			vis[n - 1][i] = 1;
+			q.push({ n - 1,i });
+			cnt--;
+		}
+	}
+
+	while (!q.empty()) {
+		int x = q.front().first;
+		int y = q.front().second;
+		q.pop();
+
+		for (int i = 0; i < 4; i++) {
+			int nx = x + dx[i];
+			int ny = y + dy[i];
+			if (nx < 0 || nx >= n || ny < 0 || ny >= n)
+				continue;
+			if (vis[nx][ny])
+				continue;
+			if (arr[nx][ny] >= lim)
+				continue;
+			q.push({ nx,ny });
+			vis[nx][ny] = 1;
+			cnt--;
+		}
+	}
+	return cnt;
+
+}
+int maxArea(int M, int mStructure[5], int mSeaLevel) {
+	ret = -1;
+
+	if (M == 1) {
+		for (int i = 0; i < n; i++) {
+			for (int j = 0; j < n; j++) {
+				arr[i][j]+=mStructure[i];
+				ret=max(ret,bfs(mSeaLevel));
+				arr[i][j] -= mStructure[i];
+			}
+		}
+		return ret;
+	}
+
+	int gh = 0;
+	int rgh = 0;
+	for (int i = 1; i < M; i++) {
+		gh *= 10;
+		gh += (mStructure[i] - mStructure[0] + 5);
+	}
+	for (int i = M - 2; i >= 0; i--) {
+		rgh *= 10;
+		rgh += (mStructure[i] - mStructure[M - 1] + 5);
+	}
+
+	int sh = 0;
+	int rsh = 0;
+	for (int i = 1; i < M; i++) {
+		sh *= 10;
+		sh += (mStructure[i] - mStructure[0] + 5);
+	}
+	for (int i = M - 2; i >= 0; i--) {
+		rsh *= 10;
+		rsh += (mStructure[i] - mStructure[M - 1] + 5);
+	}
+
+
+	for (auto c : garo[gh]) {
+		int x = c / n;
+		int y = c % n;
+
+		for (int i = 0; i < M; i++) 
+			arr[x][y + i] += mStructure[i];
+		ret = max(ret, bfs(mSeaLevel));
+		for (int i = 0; i < M; i++)
+			arr[x][y + i] -= mStructure[i];
+	}
+	if (gh != rgh) {
+		for (auto c : garo[rgh]) {
+			int x = c / n;
+			int y = c % n;
+
+			for (int i = 0; i < M; i++)
+				arr[x][y + i] += mStructure[M-1-i];
+			ret = max(ret, bfs(mSeaLevel));
+			for (int i = 0; i < M; i++)
+				arr[x][y + i] -= mStructure[M - 1-i];
+		}
+	}
+
+
+	for (auto c : sero[gh]) {
+		int x = c / n;
+		int y = c % n;
+
+		for (int i = 0; i < M; i++)
+			arr[x+i][y] += mStructure[i];
+		ret = max(ret, bfs(mSeaLevel));
+		for (int i = 0; i < M; i++)
+			arr[x+i][y] -= mStructure[i];
+	}
+	if (sh != rsh) {
+		for (auto c : sero[rgh]) {
+			int x = c / n;
+			int y = c % n;
+
+			for (int i = 0; i < M; i++)
+				arr[x+i][y] += mStructure[M - 1 - i];
+			ret = max(ret, bfs(mSeaLevel));
+			for (int i = 0; i < M; i++)
+				arr[x+i][y] -= mStructure[M - 1 - i];
+		}
+	}
+
+	return ret;
+}
