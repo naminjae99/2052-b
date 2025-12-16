@@ -1,0 +1,173 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int n, m, k, Q;
+
+int arr[100005];
+int idx;
+
+struct f {
+	int x, mn,mx;
+};
+bool del[100005];
+f tree[400005];
+f upd(int node, int s, int e, int idx, f x) {
+	if (e < idx || idx < s)
+		return { 0,1e9,-1 };
+	if (s == e)
+		return tree[node] = x;
+	int mid = (s + e) >> 1;
+	f a = upd(node << 1, s, mid, idx, x);
+	f b = upd((node << 1) | 1, mid + 1, e, idx, x);
+	return tree[node] = { a.x + b.x,min(a.mn,b.mn),max(a.mx,b.mx) };
+}
+f query(int node, int s, int e, int l, int r) {
+	if (e < l || r < s)
+		return { 0,1e9,-1 };
+	if (l <= s && e <= r)
+		return tree[node];
+	int mid = (s + e) >> 1;
+	f a = query(node << 1, s, mid, l,r);
+	f b = query((node << 1) | 1, mid + 1, e,l,r);
+	return  { a.x + b.x,min(a.mn,b.mn),max(a.mx,b.mx) };
+}
+unordered_map<int, priority_queue<array<int, 5>>>mp;
+
+void init() {
+	idx = 0;
+	mp.clear();
+
+}
+
+
+
+void makeWall(int mHeights[5]) {
+	vector<int> v;
+
+	int last = idx;
+	for (int i = 0; i < 4; i++) {
+		int mx = query(1, 1, 100000, 1, last).mx;
+		if (mx == -1)
+			break;
+		v.push_back(mx);
+		last = mx - 1;
+	}
+	reverse(v.begin(), v.end());
+
+	for (int i = 0; i < 5; i++) {
+		arr[++idx] = mHeights[i];
+		del[idx] = 1;
+		upd(1, 1, 100000, idx, { 1,idx,idx });
+		v.push_back(idx);
+	}
+
+	for (int i = 0; i < v.size() - 4; i++) {
+		array<int, 5>add;
+		int h = 0;
+		for (int j = i; j < i + 4; j++) {
+			h *= 20;
+			h += (arr[v[j]] - arr[v[j + 1]] + 10);
+			add[j - i] = v[j];
+		}
+		mp[h].push(add);
+	}
+
+}
+
+int matchPiece(int mHeights[5]) {
+	int h = 0;
+	for (int i = 3; i >= 0; i--) {
+		h *= 10;
+		h += mHeights[i] - mHeights[i + 1] + 10;
+	}
+
+	while (!mp[h].empty()) {
+		array<int, 5> tmp=mp[h].top();
+		bool flag = 0;
+		for (int i = 0; i < 5; i++) {
+			if (del[tmp[i]] == 0) {
+				flag = 1;
+				break;
+			}
+		}
+		if (flag)
+			mp[h].pop();
+		else
+			break;
+
+	}
+
+	if (mp[h].empty())
+		return -1;
+
+
+	array<int, 5> tmp = mp[h].top();
+	mp[h].pop();
+	int ret = query(1, 1, 100000, 1, tmp[0]).x;
+
+	for (int i = 0; i < 5; i++) {
+		upd(1, 1, 100000, tmp[i], { 0,1e9,-1 });
+		del[tmp[i]] = 0;
+	}
+
+	vector<int> v;
+
+	int cur = tmp[0] - 1;
+
+	for (int i = 0; i < 4; i++) {
+		int mx = query(1, 1, 100000, 1, cur).mx;
+		if (mx == -1)
+			break;
+		v.push_back(mx);
+		cur = mx - 1;
+	}
+	reverse(v.begin(), v.end());
+	cur = tmp[4] + 1;
+
+	for (int i = 0; i < 4; i++) {
+		int mn = query(1, 1, 100000,cur,idx).mn;
+		if (mn>idx)
+			break;
+		v.push_back(mn);
+		cur = mn+1;
+	}
+
+
+	for (int i = 0; i < v.size() - 4; i++) {
+		array<int, 5>add;
+		int h = 0;
+		for (int j = i; j < i + 4; j++) {
+			h *= 20;
+			h += (arr[v[j]] - arr[v[j + 1]] + 10);
+			add[j - i] = v[j];
+		}
+		mp[h].push(add);
+	}
+
+	return ret;
+}
