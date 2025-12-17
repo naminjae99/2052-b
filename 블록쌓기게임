@@ -1,0 +1,91 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int n, m, k, Q;
+
+struct Result {
+	int top;
+	int count;
+};
+struct f {
+	int mn, mx;
+	ll sum;
+};
+
+f tree[2100000];
+ll lazy[2100000];
+
+void down(int node, int s, int e) {
+	
+	if (lazy[node]) {
+		tree[node].sum += (lazy[node]* (ll)(e-s+1));
+		tree[node].mx += lazy[node];
+		tree[node].mn += lazy[node];
+		if (s != e) {
+			lazy[node << 1] += lazy[node];
+			lazy[(node << 1)+1] += lazy[node];
+		}
+		lazy[node] = 0;
+	}
+}
+void upd(int node, int s, int e, int l, int r, ll x) {
+	down(node, s, e);
+	if (e < l || r < s)
+		return;
+	if (l <= s && e <= r) {
+		lazy[node] += x;
+		down(node, s, e);
+		return;
+	}
+	int mid = (s + e) >> 1;
+	upd(node << 1, s, mid, l, r, x);
+	upd((node << 1) | 1, mid + 1, e, l, r, x);
+	tree[node] = { min(tree[node << 1].mn,tree[(node << 1) | 1].mn), max(tree[node << 1].mx,tree[(node << 1) | 1].mx),
+	tree[node << 1].sum+tree[(node << 1) | 1].sum};
+}
+
+void init(int C){
+	n = C;
+	for (int i = 0; i <(1<<21); i++) {
+		tree[i] = { 0,0,0 };
+		lazy[i] = 0;
+	}
+
+}
+
+Result dropBlocks(int mCol, int mHeight, int mLength){
+	upd(1, 0, n-1, mCol, mCol + mLength - 1, (ll)mHeight);
+
+	down(1, 0, n-1);
+	f tp = tree[1];
+	Result r;
+	r.top = tp.mx - tp.mn;
+	r.count= (tp.sum - tp.mn*n) % 1000000;
+	return r;
+
+}
