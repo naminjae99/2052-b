@@ -61,7 +61,7 @@ void uni(int a, int b) {
 
 	vil_cnt--;
 
-	if (a < b) {
+	if (house[a].h_id < house[b].h_id) {
 		h_cnt[a] += h_cnt[b];
 		house[b].par = a;
 		tail[a]->nxt = head[b];
