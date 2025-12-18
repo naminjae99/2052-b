@@ -145,10 +145,10 @@ int check(int mId) {
 
 	int mn = 1e9;
 
-	House* cur=head[p]->nxt;
+	House* cur=head[p];
 
-	while (cur != tail[p]) {
-		if(cur->del==0)
+	while (cur) {
+		if(!cur->del)
 			mn = min(mn, cur->h_id);
 		cur = cur->nxt;
 	}
