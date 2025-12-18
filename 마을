@@ -1,0 +1,162 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int n, m, k, Q,ret;
+constexpr int MAX_N = 25000;
+constexpr int MAX_R = 101;
+
+struct House {
+	int x, y;
+	int h_id;
+	int v_id;
+	House* nxt;
+	bool del;
+}house[25005];
+
+House* head[25005];
+House* tail[25005];
+int h_cnt[25005];
+
+unordered_map<int, int>mp;
+int idx;
+
+int vil_cnt;
+
+
+int find(int x) {
+	if (house[x].v_id == x)
+		return x;
+	return house[x].v_id = find(house[x].v_id);
+}
+void uni(int a, int b) {
+	a = find(house[a].v_id);
+	b = find(house[b].v_id);
+	if (a == b)
+		return;
+	h_cnt[a] += h_cnt[b];
+
+	vil_cnt--;
+	house[b].v_id = a;
+	tail[a]->nxt = head[b];
+	tail[a] = tail[b];
+}
+vector<int> comp_arr[105][105];
+int compn;
+
+void init(int L, int R) {
+	m = L, n = R;
+	compn = n / m + 1;
+	for (int i = 0; i <= compn; i++)
+		for (int j = 0; j <= compn; j++)
+			comp_arr[i][j].clear();
+	mp.clear();
+	idx = 0;
+	vil_cnt = 0;
+}
+
+bool bound(int a, int b) {
+	return (abs(house[a].x - house[b].x) + abs(house[a].y - house[b].y)) <= m;
+}
+
+int add(int mId, int mX, int mY) {
+	int id = idx;
+	mp[mId] = idx++;
+	
+	vil_cnt++;
+	h_cnt[id] = 1;
+
+	house[id] = { mX,mY,mId,id,nullptr,0 };
+
+	head[id]= tail[id] = &house[id];
+
+
+	int cx = mX / m;
+	int cy = mY / m;
+
+	for (int i = cx - 1; i <= cx + 1; i++) {
+		if (i<0 || i>compn)
+			continue;
+		for (int j = cy - 1; j <= cy + 1; j++) {
+			if (j<0 || j>compn)
+				continue;
+
+			for (auto c : comp_arr[i][j]) {
+				if (house[c].del)
+					continue;
+				if(bound(c,id))
+					uni(c, id);
+			}
+		}
+	}
+	comp_arr[cx][cy].push_back(id);
+
+	return h_cnt[find(house[id].v_id)];
+}
+
+
+int remove(int mId) {
+	if (mp.find(mId) == mp.end())
+		return -1;
+	int id = mp[mId];
+	if (house[id].del)
+		return -1;
+
+	house[id].del = 1;
+	int p = find(id);
+	if (h_cnt[p] == 1)
+		vil_cnt--;
+
+	return --h_cnt[p];
+}
+
+
+int check(int mId) {
+	if (mp.find(mId) == mp.end())
+		return -1;
+	int id = mp[mId];
+	if (house[id].del)
+		return -1;
+	int p = find(id);
+
+	int mn = 1e9;
+
+	House* cur=head[p]->nxt;
+
+	while (cur != tail[p]) {
+		if(cur->del==0)
+			mn = min(mn, cur->h_id);
+		cur = cur->nxt;
+	}
+	return mn;
+
+}
+
+
+int count() {
+	return vil_cnt;
+}
