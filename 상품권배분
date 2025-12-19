@@ -1,0 +1,121 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int n, m, k, Q,ret;
+#define MAX_NODE 18000
+#define HASH_SIZE 30000
+
+struct Node {
+	Node* par;
+	int sum;
+	Node* child[3];
+	bool del;
+}node[MAX_NODE];
+
+int idx;
+unordered_map<int, Node*>mp;
+
+void init(int N, int mId[], int mNum[]) {
+	idx = 0;
+	mp.clear();
+
+	for (int i = 0; i < N; i++) {
+		Node* add = &node[idx++];
+		add->par = nullptr;
+		add->child[0] = add->child[1] = add->child[2] = nullptr;
+		add->sum = mNum[i];
+		add->del = 0;
+
+		mp[mId[i]] = add;
+	}
+}
+
+int add(int mId, int mNum, int mParent) {
+	Node* par = mp[mParent];
+
+	Node* add = &node[idx];
+	if (par->child[0] == nullptr)
+		par->child[0] = add;
+	else if (par->child[1] == nullptr)
+		par->child[1] = add;
+	else if (par->child[2] == nullptr)
+		par->child[2] = add;
+	else
+		return -1;
+
+	add->sum = mNum;
+	add->del = 0;
+	add->child[0] = add->child[1] = add->child[2] = nullptr;
+	add->par = par;
+	idx++;
+	mp[mId] = add;
+
+	Node* cur = par;
+
+	while (cur) {
+		cur->sum += mNum;
+		cur = cur->par;
+	}
+	return par->sum;
+}
+
+void del(Node* x) {
+	for (int i = 0; i < 3; i++) {
+		if (x->child[i] != nullptr)
+			del(x->child[i]);
+	}
+	x->del = 1;
+}
+int remove(int mId) {
+	Node* d = mp[mId];
+	if (d == nullptr || d->del == 1)
+		return	-1;
+
+	Node* par = d->par;
+	for (int i = 0; i < 3; i++) {
+		if (par->child[i] == d)
+			par->child[i] = nullptr;
+	}
+
+	int sum = d->sum;
+
+	Node* cur = par;
+	while (cur) {
+		cur->sum -= sum;
+		cur = cur->par;
+	}
+
+	del(d);
+	return sum;
+}
+
+
+int distribute(int K) {
+	
+	
+}
