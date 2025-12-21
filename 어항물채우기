@@ -1,0 +1,244 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int n, m, k, Q,ret;
+
+
+
+#define MAX_N 20
+#define MAX_WIDTH 500
+
+unordered_map<int, int>mp;
+int w,h;
+int rmp[20];
+
+int len[20][500];
+int info[20][500];
+int height[20][1501];
+int mh[20];
+set<pair<int, int>> store[334];
+
+void init(int N, int mWidth, int mHeight, int mIDs[], int mLengths[][MAX_WIDTH], int mUpShapes[][MAX_WIDTH]){
+	memset(mh, 0, sizeof(mh));
+	memset(height, 0, sizeof(height));
+	for (int i = 0; i < 334; i++)
+		store[i].clear();
+	mp.clear();
+
+	n = N,w=mWidth,h=mHeight;
+
+	for (int i = 0; i < n; i++) {
+		mp[mIDs[i]] = i;
+		rmp[i] = mIDs[i];
+		for (int j = 0; j < mWidth; j++) {
+			len[i][j] = mLengths[i][j];
+			info[i][j] = mUpShapes[i][j];
+			height[i][mLengths[i][j]]++;
+			mh[i] = max(mh[i], mLengths[i][j]);
+		}
+		int hs = info[i][0] * 100 + info[i][1] * 10 + info[i][2];
+		store[hs].insert({ i,0 });
+
+		for (int j = 3; j < mWidth; j++) {
+			hs = (hs * 10 + info[i][j]) % 1000;
+			store[hs].insert({ i,j - 2 });
+		}
+
+	}
+}
+
+int checkStructures(int mLengths[3], int mUpShapes[3], int mDownShapes[3]){
+	int chk = mDownShapes[0] * 100 + mDownShapes[1] * 10 + mDownShapes[2];
+	int sum = 0;
+
+	for (auto c : store[chk]) {
+		int id = c.first;
+		int idx = c.second;
+		bool flag = 0;
+		for (int j = 0; j < 3; j++) {
+			if (len[id][idx + j] + mLengths[j] > h) {
+				flag = 1;
+				break;
+			}
+		}
+		if (flag)
+			continue;
+		if (len[id][idx] > len[id][idx + 1]) {
+			if (len[id][idx] > len[id][idx + 1] + mLengths[1])
+				flag = 1;
+		}
+		else {
+			if (len[id][idx] + mLengths[0] < len[id][idx + 1])
+				flag = 1;
+		}
+		if (flag)
+			continue;
+		if (len[id][idx+1] > len[id][idx + 2]) {
+			if (len[id][idx+1] > len[id][idx + 2] + mLengths[2])
+				flag = 1;
+		}
+		else {
+			if (len[id][idx+1] + mLengths[1] < len[id][idx + 2])
+				flag = 1;
+		}
+		if (flag == 0)
+			sum++;
+	}
+	return sum;
+}
+
+int addStructures(int mLengths[3], int mUpShapes[3], int mDownShapes[3]){
+	int chk = mDownShapes[0] * 100 + mDownShapes[1] * 10 + mDownShapes[2];
+	
+	pair<int, int>chg = {-1,-1};
+
+	for (auto c : store[chk]) {
+		int id = c.first;
+		int idx = c.second;
+		bool flag = 0;
+		for (int j = 0; j < 3; j++) {
+			if (len[id][idx + j] + mLengths[j] > h) {
+				flag = 1;
+				break;
+			}
+		}
+		if (flag)
+			continue;
+		if (len[id][idx] > len[id][idx + 1]) {
+			if (len[id][idx] > len[id][idx + 1] + mLengths[1])
+				flag = 1;
+		}
+		else {
+			if (len[id][idx] + mLengths[0] < len[id][idx + 1])
+				flag = 1;
+		}
+		if (flag)
+			continue;
+		if (len[id][idx + 1] > len[id][idx + 2]) {
+			if (len[id][idx + 1] > len[id][idx + 2] + mLengths[2])
+				flag = 1;
+		}
+		else {
+			if (len[id][idx + 1] + mLengths[1] < len[id][idx + 2])
+				flag = 1;
+		}
+		if (flag == 0) {
+			chg = { id,idx };
+			break;
+		}
+	}
+	if (chg.first == -1)
+		return 0;
+
+	int hs;
+	int id = chg.first;
+	int idx = chg.second;
+
+	for (int i = max(0, idx - 2); i <= min(w - 3, idx + 2); i++) {
+		hs = info[id][i] * 100 + info[id][i+1] * 10 + info[id][i+2];
+		store[hs].erase({ id,i });
+	}
+	for (int i = 0; i < 3; i++) {
+		height[id][len[id][idx + i]]--;
+		len[id][idx + i] += mLengths[i];
+		height[id][len[id][idx + i]]++;
+		mh[id] = max(mh[id], len[id][idx + i]);
+		info[id][idx + i] = mUpShapes[i];
+	}
+	for (int i = max(0, idx - 2); i <= min(w - 3, idx + 2); i++) {
+		hs = info[id][i] * 100 + info[id][i + 1] * 10 + info[id][i + 2];
+		store[hs].insert({ id,i });
+	}
+	return rmp[id] * 1000 + idx+1;
+}
+struct Result {
+	int ID;
+	int height;
+	int used;
+};
+Result pourIn(int mWater){
+	Result re = {0,0,0};
+
+	for (int i = 0; i < n; i++) {
+		int tmp = 0;
+		int cnt = 0;
+		int mx = 0;
+
+		bool flag = 0;
+
+		for (int j = 1; j < mh[i]; j++) {
+			if (flag)
+				break;
+			if (height[i][j] == 0)
+				continue;
+
+			//j에서 다음 높이 찾기
+			for (int z = j + 1; z <= mh[i]; z++) {
+				if (height[i][z] == 0)
+					continue;
+				int dif = z - j;
+				int hope = dif * (height[i][j] + cnt);
+				if (tmp + hope < mWater) {
+					tmp += hope;
+					cnt += height[i][j];
+					j = z - 1;
+					mx = z;
+				}
+				else {
+					flag = 1;
+					break;
+				}
+			}
+		}
+		if (tmp < mWater&&mx<h) {
+			int add = (mWater - tmp) / w;
+			if (mx + add > h) {
+				tmp += w * (h - mx);
+				mx = h;
+			}
+			else {
+				tmp += add * w;
+				mx += add;
+			}
+		}
+
+		if (re.height < mx)
+			re = { rmp[i],mx,tmp };
+		else if (re.height == mx) {
+			if(re.used<tmp)
+				re = { rmp[i],mx,tmp };
+			else if (re.used == tmp) {
+				if(re.ID>rmp[i])
+					re = { rmp[i],mx,tmp };
+			}
+		}
+
+	}
+	return re;
+	
+}
