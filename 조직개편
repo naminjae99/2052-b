@@ -1,0 +1,178 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int dx[4] = { 0,0,-1,1 };
+int dy[4] = { -1,1,0,0 };
+int n, m, k, Q, ret;
+bool outbound(int x, int y) {
+	return (x < 0 || x >= n || y < 0 || y >= m);
+}
+
+
+
+struct Node {
+	int mid;
+	int val;
+	int sum;
+	Node* par;
+	Node* child[2];
+	bool del;
+}node[10005];
+unordered_map<int, Node*>mp;
+int idx;
+
+void init(int mId, int mNum) {
+	idx = 0;
+	mp.clear();
+
+	Node* root = &node[idx++];
+	root->mid = mId;
+	root->val = mNum;
+	root->sum = mNum;
+	root->child[0] = root->child[1] = nullptr;
+	root->del = 0;
+	mp[mId] = root;
+}
+
+int add(int mId, int mNum, int mParent) {
+	Node* par = mp[mParent];
+	if (par->child[0] != nullptr&&par->child[1] != nullptr)
+		return -1;
+
+	Node* ad = &node[idx++];
+	ad->mid = mId;
+	ad->val = mNum;
+	ad->sum = mNum;
+	ad->par = par;
+	ad->child[0] = ad->child[1] = nullptr;
+	ad->del = 0;
+	mp[mId] = ad;
+	if (par->child[0] == nullptr)
+		par->child[0] = ad;
+	else
+		par->child[1] = ad;
+
+
+	Node *cur = par;
+	while (cur != nullptr) {
+		cur->sum += mNum;
+		cur = cur->par;
+	}
+	return par->sum;
+}
+void del(Node* x) {
+	x->del = 1;
+	for (int i = 0; i < 2; i++) {
+		if (x->child[i] != nullptr)
+			del(x->child[i]);
+	}
+}
+int remove(int mId) {
+	if (mp.find(mId) == mp.end())
+		return -1;
+	Node* cur = mp[mId];
+	if (cur->del)
+		return -1;
+
+
+	int sum = cur->sum;
+	Node* upd = cur->par;
+	for (int i = 0; i < 2; i++) {
+		if (upd->child[i] == cur)
+			upd->child[i] = nullptr;
+	}
+
+
+	while (upd) {
+		upd->sum -= sum;
+		upd = upd->par;
+	}
+
+	
+	del(cur);
+	return sum;
+}
+
+
+pair<int, int> dfs(Node* cur,int k) {
+	if (cur->val > k)
+		return{ -1,0 };
+	if (cur->child[0] == nullptr&&cur->child[1] == nullptr)
+		return { 0,cur->val };
+	
+	if (cur->child[1] == nullptr) {
+		pair<int,int> tmp=dfs(cur->child[0], k);
+		if (tmp.first == -1)
+			return { -1,0 };
+		if (tmp.second + cur->val <= k)
+			return { tmp.first,tmp.second + cur->val };
+		else
+			return { tmp.first + 1,cur->val };
+	}
+
+	else if (cur->child[0] == nullptr) {
+		pair<int, int> tmp = dfs(cur->child[1], k);
+		if (tmp.first == -1)
+			return { -1,0 };
+		if (tmp.second + cur->val <= k)
+			return { tmp.first,tmp.second + cur->val };
+		else
+			return { tmp.first + 1,cur->val };
+	}
+
+	else {
+		pair<int, int> le = dfs(cur->child[0], k);
+		pair<int, int> ri = dfs(cur->child[1], k);
+
+		if (le.first == -1 || ri.first == -1)
+			return { -1,0 };
+		
+		if (le.second + ri.second + cur->val <= k)
+			return { le.first + ri.first,le.second + ri.second + cur->val };
+		if (le.second > ri.second)
+			swap(le, ri);
+
+		if(le.second+cur->val<=k)
+			return  { le.first + ri.first+1,le.second + cur->val };
+		return  { le.first + ri.first+2, cur->val };
+	}
+}
+int reorganize(int M, int K) {
+	pair<int,int> tmp=dfs(&node[0],K);
+	if (tmp.first == -1)
+		return 0;
+
+	if (tmp.second > 0) {
+		if (tmp.first + 1 <= M)
+			return 1;
+		return 0;
+	}
+	if (tmp.first <= M)
+		return 1;
+	return 0;
+}
