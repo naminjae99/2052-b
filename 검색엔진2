@@ -1,0 +1,218 @@
+#ifndef _CRT_SECURE_NO_WARNINGS
+#define _CRT_SECURE_NO_WARNINGS
+#endif
+
+#include <stdio.h>
+#include<iostream>
+#include<unordered_map>
+#include<set>
+#include<vector>
+#include<memory.h>
+#include<algorithm>
+#include<math.h>
+#include<queue>
+#include<deque>
+#include<unordered_set>
+#include<string>
+#include<string.h>
+#include<stack>
+#include<sstream>
+#include<iomanip>
+#include<deque>
+#include<array>
+#include<limits.h>
+#include<cfloat>
+#include<map>
+#define fastio ios::sync_with_stdio(0), cin.tie(0), cout.tie(0);
+using namespace std;
+using ll = long long;
+int dx[4] = { 0,0,-1,1 };
+int dy[4] = { -1,1,0,0 };
+int n, m, k, Q, ret;
+bool outbound(int x, int y) {
+	return (x < 0 || x >= n || y < 0 || y >= m);
+}
+
+struct Result {
+	int mOrder;
+	int mRank;
+};
+struct Node {
+	string s;
+	int id,par,cnt;
+}node[10005];
+vector<int> store[10005];
+unordered_map<string, int>mp;
+int idx;
+
+struct f {
+	int cnt, id;
+	bool operator<(const f& o)const {
+		if (cnt != o.cnt)
+			return cnt < o.cnt;
+		return node[id].s > node[o.id].s;
+	}
+};
+unordered_map<string, priority_queue<f>>dict;
+
+
+int find(int x) {
+	if (node[x].par == x)
+		return x;
+	return node[x].par = find(node[x].par);
+}
+
+void init() {
+	idx = 0;
+	mp.clear();
+	dict.clear();
+}
+
+void search(char mStr[], int mCount) {
+	if (mp.find(mStr) == mp.end()) {
+		node[idx].s = mStr;
+		node[idx].id = idx;
+		node[idx].cnt = 0;
+		node[idx].par = idx;
+		mp[mStr] = idx++;
+		store[idx].clear();
+		store[idx].push_back(idx);
+	}
+	Node* cur = &node[mp[mStr]];
+	int par = find(cur->par);
+	node[par].cnt += mCount;
+	
+	f tmp = { node[par].cnt ,cur->id};
+	string tmps = "";
+	dict["!"].push(tmp);
+
+	for (int i = 0; i < strlen(mStr); i++) {
+		tmps += mStr[i];
+		dict[tmps].push(tmp);
+	}
+
+}
+
+Result recommend(char mStr[]) {
+	Result re = { 0,0 };
+	int p;
+
+	bool flag = 0;
+	vector<f> tmp;
+	while (!dict["!"].empty()) {
+		int x = dict["!"].top().cnt;
+		int y = dict["!"].top().id;
+		dict["!"].pop();
+		if (node[find(y)].cnt != x) 
+			continue;
+		tmp.push_back({ x,y });
+		if (node[y].s == mStr) {
+			re.mRank = 0;
+			re.mOrder = tmp.size();
+			flag = 1;
+			p = find(node[y].par);
+			break;
+		}
+		if (tmp.size() == 5)
+			break;
+	}
+	for(auto c:tmp)
+		dict["!"].push(c);
+	if (flag) {
+		node[p].cnt++;
+	
+		for (auto c : store[p]) {
+			f add = { node[p].cnt,c };
+			string cur = "";
+			dict["!"].push(add);
+			for (int i = 0; i < node[c].s.size(); i++) {
+				cur += node[c].s[i];
+				dict[cur].push(add);
+			}
+		}
+		return re;
+	}
+	string chk = "";
+	for (int rank = 0; rank < strlen(mStr); rank++) {
+	
+		tmp.clear();
+		chk += mStr[rank];
+		while (!dict[chk].empty()) {
+			int x = dict[chk].top().cnt;
+			int y = dict[chk].top().id;
+			dict[chk].pop();
+			if (node[find(y)].cnt != x)
+				continue;
+			tmp.push_back({ x,y });
+			if (node[y].s == mStr) {
+				re.mRank = rank+1;
+				re.mOrder = tmp.size();
+				flag = 1;
+				p = find(node[y].par);
+				break;
+			}
+			if (tmp.size() == 5)
+				break;
+		}
+		for (auto c : tmp)
+			dict[chk].push(c);
+		if (flag) {
+			node[p].cnt++;
+			for (auto c : store[p]) {
+				f add = { node[p].cnt,c };
+				string cur = "";
+				dict["!"].push(add);
+				for (int i = 0; i < node[c].s.size(); i++) {
+					cur += node[c].s[i];
+					dict[cur].push(add);
+				}
+			}
+			return re;
+		}
+	}
+
+}
+
+int relate(char mStr1[], char mStr2[]) {
+	int p1 = find(node[mp[mStr1]].par);
+	int p2 = find(node[mp[mStr2]].par);
+
+	if (store[p1].size() < store[p2].size())
+		swap(p1, p2);
+	for (auto c : store[p2])
+		store[p1].push_back(c);
+
+	node[p1].cnt += node[p2].cnt;
+	node[p2].par = p1;
+	return node[p1].cnt;
+}
+
+void rank(char mPrefix[], int mRank, char mReturnStr[]) {
+
+	vector<f> tmp;
+	while (!dict[mPrefix].empty()) {
+		int x = dict[mPrefix].top().cnt;
+		int y = dict[mPrefix].top().id;
+		dict[mPrefix].pop();
+		if (node[find(y)].cnt != x)
+			continue;
+		tmp.push_back({ x,y });
+		if (tmp.size() == mRank) {
+			for(int i=0;i<node[y].s.size();i++)
+				mReturnStr[i] = node[y].s[i];
+			mReturnStr[node[y].s.size()] = '\0';
+			break;
+		}
+	}
+	for (auto c : tmp)
+		dict[mPrefix].push(c);
+
+}
+
+void solve() {
+
+}
+int main() {
+	fastio
+	solve();
+}
